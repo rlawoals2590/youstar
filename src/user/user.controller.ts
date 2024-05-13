@@ -1,20 +1,30 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Req, Res } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { LoginUserDto } from './dto/login-user.dto';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post('/signUp')
-  async signUp(@Body() body: CreateUserDto) {
-    return await this.userService.signUp(body);
+  @Post('/signup')
+  async signup(@Body() body: CreateUserDto) {
+    return await this.userService.signup(body);
   }
 
   @Post('/login')
-  login(@Body() body: LoginUserDto){
-    return this.userService.login(body);
+  async login(@Body() body: LoginUserDto, @Res() res: Response){
+    return await this.userService.login(body, res);
+  }
+
+  @Get('/cookies')
+  getCookies(@Req() req: Request, @Res() res: Response) {
+    return this.userService.getCookies(req, res);
+  }
+
+  @Post('/logout')
+  logout(@Res() res: Response) {
+    return this.logout(res);
   }
 }
