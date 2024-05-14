@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Dongle:wght@300&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'EB Garamond', sans-serif;
+}
+
+.container {
+  position: relative;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 100vh;
+  background: url('assets/main_background.jpeg') no-repeat center center fixed;
+  background-size: cover;
+  color: #ffffff;
+}
+
+.content {
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  transform: translateY(-50%);
+  text-align: left;
+}
+
+.logo {
+  font-size: 4rem;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  margin-bottom: 40px;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.button i {
+  float: right;
+}
+
+.button {
+  padding: 15px 30px;
+  border: 2px solid #ff00ff;
+  border-radius: 5px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: background 0.3s, color 0.3s;
+  width: 200px;
+}
+
+.button:hover {
+  background: #ff00ff;
+  color: #000000;
+}
+
+.footer {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer img {
+  width: 24px;
+  height: 24px;
+}
