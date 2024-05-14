@@ -52,7 +52,7 @@ export class UserService {
     const access_token = await this.jwtService.signAsync(payload)
 
     res.setHeader('Authorization', 'Bearer ' + access_token);
-    res.cookie('acces_token', access_token,{
+    res.cookie('access_token', access_token,{
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000 //1 day
     });
@@ -63,15 +63,15 @@ export class UserService {
   }
 
   getCookies(req: Request, res: Response) {
-    const acces_token = req.cookies['acces_token'];
-    return res.send(acces_token);
+    const access_token = req.cookies['access_token'];
+    return res.send(access_token);
   }
 
   logout(res: Response) {
-    res.cookie('acces_token', '', {
+    res.cookie('access_token', '', {
       maxAge: 0
     });
-    
+
     return res.send({
         message: 'success'
     });

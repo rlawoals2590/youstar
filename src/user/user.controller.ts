@@ -25,6 +25,6 @@ export class UserController {
 
   @Post('/logout')
   logout(@Res() res: Response) {
-    return this.logout(res);
+    return this.userService.logout(res);
   }
 }
