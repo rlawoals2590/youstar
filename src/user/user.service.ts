@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -14,6 +14,17 @@ export class UserService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly jwtService: JwtService
   ) {}
+
+  async getById(id: number) {
+    const user = await this.userModel.findOne({ id });
+    if (user) {
+      return user;
+    }
+    throw new HttpException(
+      '사용자가 존재하지 않습니다.',
+      HttpStatus.NOT_FOUND,
+    );
+  }
 
   async signup(body: CreateUserDto) {
     const { email, name, password } = body;

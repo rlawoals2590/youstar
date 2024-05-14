@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Req, Res, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Request, Response } from 'express';
 import { LoginUserDto } from './dto/login-user.dto';
+import JwtAuthenticationGuard from './user-authentication.guard';
 
 @Controller('user')
 export class UserController {
@@ -19,11 +20,13 @@ export class UserController {
   }
 
   @Get('/cookies')
+  @UseGuards(JwtAuthenticationGuard)
   getCookies(@Req() req: Request, @Res() res: Response) {
     return this.userService.getCookies(req, res);
   }
 
   @Post('/logout')
+  @UseGuards(JwtAuthenticationGuard)
   logout(@Res() res: Response) {
     return this.userService.logout(res);
   }
