@@ -20,7 +20,7 @@ import { UserStrategy } from './user.strategy';
       global: true,
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET_KEY'),
-        signOptions: { expiresIn: '60s' },
+        signOptions: { expiresIn: '24h' },
       })
     })
   ],

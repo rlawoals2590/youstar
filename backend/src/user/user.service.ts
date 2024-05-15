@@ -21,7 +21,7 @@ export class UserService {
       return user;
     }
     throw new HttpException(
-      '사용자가 존재하지 않습니다.',
+      'Not Found User.',
       HttpStatus.NOT_FOUND,
     );
   }

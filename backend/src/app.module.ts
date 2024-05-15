@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { UserModule } from './user/user.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
+import { PhotoModule } from './photo/photo.module';
 import mongoose from 'mongoose';
 
 @Module({
@@ -10,7 +11,8 @@ import mongoose from 'mongoose';
       isGlobal: true,
     }),
     MongooseModule.forRoot(process.env.MONGODB_URL),
-    UserModule
+    UserModule,
+    PhotoModule
   ],
   controllers: [],
   providers: [],
