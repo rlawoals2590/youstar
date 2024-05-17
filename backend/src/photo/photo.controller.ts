@@ -12,7 +12,7 @@ import { PhotoService } from './photo.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import JwtAuthenticationGuard from 'src/user/user-authentication.guard';
 
-@Controller('photo')
+@Controller('Photo')
 export class PhotoController {
   constructor(private readonly photoService: PhotoService) {}
 
