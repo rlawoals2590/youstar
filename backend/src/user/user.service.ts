@@ -12,7 +12,7 @@ import { Request, Response } from 'express';
 export class UserService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
   ) {}
 
   async getById(id: number) {
@@ -20,10 +20,7 @@ export class UserService {
     if (user) {
       return user;
     }
-    throw new HttpException(
-      'Not Found User.',
-      HttpStatus.NOT_FOUND,
-    );
+    throw new HttpException('Not Found User.', HttpStatus.NOT_FOUND);
   }
 
   async signup(body: CreateUserDto) {
@@ -53,23 +50,22 @@ export class UserService {
       throw new UnauthorizedException("This email doesn't exist");
     }
 
-    const validatePassword = await bcrypt.compare(password, user.password)
-    
+    const validatePassword = await bcrypt.compare(password, user.password);
     if (!validatePassword) {
-      throw new UnauthorizedException("Passwords do not match");
+      throw new UnauthorizedException('Passwords do not match');
     }
 
     const payload = { sub: user.id, email: user.email };
-    const access_token = await this.jwtService.signAsync(payload)
+    const access_token = await this.jwtService.signAsync(payload);
 
     res.setHeader('Authorization', 'Bearer ' + access_token);
-    res.cookie('access_token', access_token,{
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 //1 day
+    res.cookie('access_token', access_token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, //1 day
     });
 
     return res.send({
-      message: 'success'
+      message: 'success',
     });
   }
 
@@ -80,11 +76,11 @@ export class UserService {
 
   logout(res: Response) {
     res.cookie('access_token', '', {
-      maxAge: 0
+      maxAge: 0,
     });
 
     return res.send({
-        message: 'success'
+      message: 'success',
     });
   }
 }

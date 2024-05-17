@@ -6,9 +6,7 @@ import { UserService } from './user.service';
 
 @Injectable()
 export class UserStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private readonly userService: UserService,
-  ) {
+  constructor(private readonly userService: UserService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
