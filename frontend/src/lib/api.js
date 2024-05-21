@@ -1,9 +1,9 @@
-const fastapi = (operation, url, params, success_callback, failure_callback) => {
+const nestapi = (operation, url, params, success_callback, failure_callback) => {
     let method = operation
     let content_type = 'application/json'
     let body = JSON.stringify(params)
 
-    let _url = 'http://127.0.0.1:3000'+url
+    let _url = import.meta.env.VITE_SERVER_URL+url
     if(method === 'get') {
         _url += "?" + new URLSearchParams(params)
     }
@@ -41,4 +41,4 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
         })
 }
 
-export default fastapi
+export default nestapi
