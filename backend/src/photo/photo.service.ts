@@ -15,12 +15,14 @@ export class PhotoService {
   private s3Client: S3Client;
   private client: Client;
   private apiKey: string = process.env.GCP_API;
+  private region: string = process.env.AWS_REGION;
+  private bucket: string = process.env.S3_BUCKET_NAME;
 
   constructor(
     @InjectModel(Photo.name) private readonly photoModel: Model<Photo>,
   ) {
     this.s3Client = new S3Client({
-      region: process.env.AWS_REGION, // AWS Region
+      region: this.region, // AWS Region
       credentials: {
         accessKeyId: process.env.AWS_S3_ACCESS_KEY, // Access Key
         secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY, // Secret Key
@@ -29,15 +31,40 @@ export class PhotoService {
     this.client = new Client({});
   }
 
-  async getUploadUrl(image_id: string, type: string): Promise<string> {
+  async getAllPhotos(req: Request) {
+    // const user_id = req['user']['_id'];
+    const user_id = 'tasoidhahs';
+    const user_photos = await this.photoModel.find({ user_id }).exec();
+
+    if (!user_photos) {
+      throw new UnauthorizedException(
+        'User dont have photos with id ' + user_id,
+      );
+    }
+
+    const imageUrls = [];
+    for (const image of user_photos) {
+      const extName = image.name.split('.')[1];
+      const imageUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${image.user_id}/${image.image_id}.${extName}`;
+      imageUrls.push({ imageUrl });
+    }
+
+    return imageUrls;
+  }
+
+  async getUploadUrl(
+    user_id: string,
+    image_id: string,
+    type: string,
+  ): Promise<string> {
     const extName = type.split('/')[1];
     const command = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: `profile/${image_id}.${extName}`,
+      Bucket: this.bucket,
+      Key: `${user_id}/${image_id}.${extName}`,
       ContentType: type,
     });
     return await getSignedUrl(this.s3Client, command, {
-      expiresIn: 60,
+      expiresIn: 10,
     });
   }
 
@@ -77,7 +104,8 @@ export class PhotoService {
 
       return {
         image_id: uuid(),
-        user_id: req['user']['_id'],
+        // user_id: req['user']['_id'],
+        user_id: 'tasoidhahs',
         name: file.originalname,
         date: dateTaken ? new Date(dateTaken * 1000) : null,
         location: location,
@@ -105,6 +133,6 @@ export class PhotoService {
       location,
     });
 
-    return this.getUploadUrl(photo.image_id, file.mimetype);
+    return this.getUploadUrl(user_id, photo.image_id, file.mimetype);
   }
 }
