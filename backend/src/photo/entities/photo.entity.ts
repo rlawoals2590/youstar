@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { IsDate, IsNotEmpty, IsObject, IsString} from 'class-validator';
+import { IsDate, IsNotEmpty, IsString } from 'class-validator';
 import { Document, SchemaOptions } from 'mongoose';
-import {Location, LocationSchema} from "./location.entity";
+import { Location, LocationSchema } from "./location.entity";
 
 const options: SchemaOptions = {
   timestamps: true,
@@ -38,6 +38,13 @@ export class Photo extends Document {
   @IsDate()
   @IsNotEmpty()
   date: Date;
+
+  @Prop({
+    required: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  ext: string;
 
   @Prop({ type: LocationSchema, required: true })
   location: Location;

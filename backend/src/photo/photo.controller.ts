@@ -16,6 +16,12 @@ import JwtAuthenticationGuard from 'src/user/user-authentication.guard';
 export class PhotoController {
   constructor(private readonly photoService: PhotoService) {}
 
+  @Get()
+  @UseGuards(JwtAuthenticationGuard)
+  getAllPhotos(@Req() req: Request) {
+    return this.photoService.getAllPhotos(req);
+  }
+
   @Post('upload')
   // @UseGuards(JwtAuthenticationGuard)
   @UseInterceptors(FileInterceptor('file'))
@@ -24,11 +30,5 @@ export class PhotoController {
     @Req() req: Request,
   ) {
     return this.photoService.uploadImage(file, req);
-  }
-
-  @Get()
-  @UseGuards(JwtAuthenticationGuard)
-  getAllPhotos(@Req() req: Request) {
-    return this.photoService.getAllPhotos(req);
   }
 }

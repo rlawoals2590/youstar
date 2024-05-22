@@ -36,6 +36,10 @@ export class CreatePhotoDto {
   @IsNotEmpty()
   date: Date;
 
+  @IsString()
+  @IsNotEmpty()
+  ext: string;
+
   @IsObject()
   @ValidateNested()
   @Type(() => LocationDto)

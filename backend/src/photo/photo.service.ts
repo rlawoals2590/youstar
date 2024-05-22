@@ -9,6 +9,12 @@ import { readFileSync } from 'fs';
 import * as ExifParser from 'exif-parser';
 import { v1 as uuid } from 'uuid';
 import { CreatePhotoDto } from './dto/create-photo.dto';
+import * as Ffmpeg from 'fluent-ffmpeg';
+import ffmpegPath from 'ffmpeg-static';
+import ffprobePath from 'ffprobe-static';
+
+Ffmpeg.setFfmpegPath(ffmpegPath);
+Ffmpeg.setFfprobePath(ffprobePath.path);
 
 @Injectable()
 export class PhotoService {
@@ -42,14 +48,13 @@ export class PhotoService {
       );
     }
 
-    const imageUrls = [];
+    const photos_list = [];
     for (const image of user_photos) {
-      const extName = image.name.split('.')[1];
-      const imageUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${image.user_id}/${image.image_id}.${extName}`;
-      imageUrls.push({ imageUrl });
+      const imageUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${image.user_id}/${image.image_id}.${image.ext}`;
+      photos_list.push({ image, imageUrl });
     }
 
-    return imageUrls;
+    return photos_list;
   }
 
   async getUploadUrl(
@@ -68,46 +73,86 @@ export class PhotoService {
     });
   }
 
+  async getPhotoLocation(latitude: number, longitude: number) {
+    if (latitude && longitude) {
+      const response = await this.client.reverseGeocode({
+        params: {
+          latlng: [latitude, longitude],
+          key: this.apiKey,
+          language: 'ko' as any,
+        },
+        timeout: 1000,
+      });
+      // console.log(response.data.results[0]); // 응답 데이터 로그 출력
+
+      const formatted_address = response.data.results[0].formatted_address;
+
+      return {
+        latitude,
+        longitude,
+        formatted_address,
+      };
+    }
+  }
+
   async getImageInfo(
     file: Express.Multer.File,
     req: Request,
   ): Promise<CreatePhotoDto> {
-    const buffer = readFileSync(file.path);
-    const parser = ExifParser.create(buffer);
-    const result = parser.parse();
+    const isVideo = file.mimetype.startsWith('video/');
+    let dateTaken;
+    let latitude: number;
+    let longitude: number;
 
-    const dateTaken = result.tags.DateTimeOriginal;
-    const latitude = result.tags.GPSLatitude;
-    const longitude = result.tags.GPSLongitude;
+    if (isVideo) {
+      // 동영상 파일의 메타데이터 추출
+      await new Promise((resolve, reject) => {
+        Ffmpeg.ffprobe(file.path, (err, metadata) => {
+          if (err) {
+            return reject(err);
+          }
+          const iso6709 =
+            metadata.format.tags?.['com.apple.quicktime.location.ISO6709'];
+          if (iso6709) {
+            if (typeof iso6709 !== 'number') {
+              [latitude, longitude] = iso6709
+                .match(/[+-]\d+\.\d+/g)
+                .map(Number);
+            }
+          }
+          dateTaken =
+            metadata.format.tags?.['com.apple.quicktime.creationdate'];
+          if (dateTaken) {
+            const parsedDate = new Date(dateTaken);
+            if (!isNaN(parsedDate.getTime())) {
+              dateTaken = Math.floor(parsedDate.getTime() / 1000); // 초 단위로 변환
+            } else {
+              console.warn(`Invalid creation_time: ${dateTaken}`);
+            }
+          }
+          resolve(file);
+        });
+      });
+    } else {
+      // 이미지 파일의 메타데이터 추출
+      const buffer = readFileSync(file.path);
+      const parser = ExifParser.create(buffer);
+      const result = parser.parse();
+
+      dateTaken = result.tags.DateTimeOriginal;
+      latitude = result.tags.GPSLatitude;
+      longitude = result.tags.GPSLongitude;
+    }
 
     try {
-      let location = null;
-      if (latitude && longitude) {
-        const response = await this.client.reverseGeocode({
-          params: {
-            latlng: [latitude, longitude],
-            key: this.apiKey,
-            language: 'ko' as any,
-          },
-          timeout: 1000,
-        });
-        // console.log(response.data.results[0]); // 응답 데이터 로그 출력
-
-        const formatted_address = response.data.results[0].formatted_address;
-
-        location = {
-          latitude,
-          longitude,
-          formatted_address,
-        };
-      }
-
+      const location = await this.getPhotoLocation(latitude, longitude);
       return {
         image_id: uuid(),
         // user_id: req['user']['_id'],
         user_id: 'tasoidhahs',
         name: file.originalname,
         date: dateTaken ? new Date(dateTaken * 1000) : null,
+        ext: file.mimetype.split('/')[1],
         location: location,
       };
     } catch (error) {
@@ -118,7 +163,7 @@ export class PhotoService {
 
   async uploadImage(file: Express.Multer.File, req: Request) {
     const body = await this.getImageInfo(file, req);
-    const { image_id, user_id, name, date, location } = body;
+    const { image_id, user_id, name, date, ext, location } = body;
     const isImageExist = await this.photoModel.exists({ user_id, name });
 
     if (isImageExist) {
@@ -130,6 +175,7 @@ export class PhotoService {
       user_id,
       name,
       date,
+      ext,
       location,
     });
 
