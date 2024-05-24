@@ -6,7 +6,7 @@ import {
   UseGuards,
   Req,
   Query,
-  UploadedFile, Res,
+  UploadedFile, Res, Delete, Param,
 } from '@nestjs/common';
 import { PhotoService } from './photo.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -29,6 +29,12 @@ export class PhotoController {
     @UploadedFile() file: Express.Multer.File,
     @Req() req: Request,
   ) {
-    return this.photoService.uploadImage(file, req);
+    return this.photoService.uploadPhoto(file, req);
+  }
+
+  @Delete('delete/:photo_id')
+  @UseGuards(JwtAuthenticationGuard)
+  deletePhoto(@Param('photo_id') photo_id: string) {
+    return this.photoService.deletePhoto(photo_id);
   }
 }

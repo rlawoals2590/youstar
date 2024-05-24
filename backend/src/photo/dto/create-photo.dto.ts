@@ -22,7 +22,7 @@ class LocationDto {
 export class CreatePhotoDto {
   @IsString()
   @IsNotEmpty()
-  image_id: string;
+  photo_id: string;
 
   @IsString()
   @IsNotEmpty()

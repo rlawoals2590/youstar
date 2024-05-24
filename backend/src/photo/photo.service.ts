@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Client } from '@googlemaps/google-maps-services-js';
 import { InjectModel } from '@nestjs/mongoose';
@@ -49,9 +49,9 @@ export class PhotoService {
     }
 
     const photos_list = [];
-    for (const image of user_photos) {
-      const imageUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${image.user_id}/${image.image_id}.${image.ext}`;
-      photos_list.push({ image, imageUrl });
+    for (const photo of user_photos) {
+      const photoUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${photo.user_id}/${photo.photo_id}.${photo.ext}`;
+      photos_list.push({ photo, photoUrl });
     }
 
     return photos_list;
@@ -59,17 +59,17 @@ export class PhotoService {
 
   async getUploadUrl(
     user_id: string,
-    image_id: string,
+    photo_id: string,
     type: string,
   ): Promise<string> {
     const extName = type.split('/')[1];
     const command = new PutObjectCommand({
       Bucket: this.bucket,
-      Key: `${user_id}/${image_id}.${extName}`,
+      Key: `${user_id}/${photo_id}.${extName}`,
       ContentType: type,
     });
     return await getSignedUrl(this.s3Client, command, {
-      expiresIn: 10,
+      expiresIn: 5,
     });
   }
 
@@ -95,7 +95,7 @@ export class PhotoService {
     }
   }
 
-  async getImageInfo(
+  async getPhotoInfo(
     file: Express.Multer.File,
     req: Request,
   ): Promise<CreatePhotoDto> {
@@ -147,7 +147,7 @@ export class PhotoService {
     try {
       const location = await this.getPhotoLocation(latitude, longitude);
       return {
-        image_id: uuid(),
+        photo_id: uuid(),
         // user_id: req['user']['_id'],
         user_id: 'tasoidhahs',
         name: file.originalname,
@@ -161,9 +161,9 @@ export class PhotoService {
     }
   }
 
-  async uploadImage(file: Express.Multer.File, req: Request) {
-    const body = await this.getImageInfo(file, req);
-    const { image_id, user_id, name, date, ext, location } = body;
+  async uploadPhoto(file: Express.Multer.File, req: Request) {
+    const body = await this.getPhotoInfo(file, req);
+    const { photo_id, user_id, name, date, ext, location } = body;
     const isImageExist = await this.photoModel.exists({ user_id, name });
 
     if (isImageExist) {
@@ -171,7 +171,7 @@ export class PhotoService {
     }
 
     const photo = await this.photoModel.create({
-      image_id,
+      photo_id,
       user_id,
       name,
       date,
@@ -179,6 +179,19 @@ export class PhotoService {
       location,
     });
 
-    return this.getUploadUrl(user_id, photo.image_id, file.mimetype);
+    return this.getUploadUrl(user_id, photo.photo_id, file.mimetype);
+  }
+
+  async deletePhoto(photo_id: string) {
+    const photo = await this.photoModel.findOneAndDelete({ photo_id });
+    if (!photo) {
+      throw new UnauthorizedException('Image not found');
+    }
+    const command = new DeleteObjectCommand({
+      Bucket: this.bucket,
+      Key: `${photo.user_id}/${photo_id}.${photo.ext}`,
+    });
+
+    return await this.s3Client.send(command);
   }
 }
